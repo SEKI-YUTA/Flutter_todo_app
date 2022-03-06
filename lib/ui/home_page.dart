@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:todo_app/controllers/task_controller.dart';
 import 'package:todo_app/services/notification_services.dart';
 import 'package:todo_app/services/theme_services.dart';
 import 'package:todo_app/ui/add_task_page.dart';
@@ -18,10 +19,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
+  final _taskController = Get.put(TaskController());
   var notifyHelper;
   @override
   void initState() {
     super.initState();
+    _taskController.getTasks();
   notifyHelper = NotifyHelper();
   notifyHelper.initializeNotification();
   notifyHelper.requestIOSPermissions();
@@ -36,8 +39,35 @@ class _HomePageState extends State<HomePage> {
         children: [
           _addTaskBar(),
           _addDateBar(),
+          SizedBox(height: 10,),
+          _showTasks(),
         ],
       ),
+    );
+  }
+
+  _showTasks() {
+    return Expanded(
+      child: Obx(() {
+        return ListView.builder(
+          itemCount: _taskController.taskList.length,
+          itemBuilder: ((context, index) {
+            print(_taskController.taskList.length);
+          return GestureDetector(
+            onTap: () {
+              _taskController.delete(_taskController.taskList[index]);
+              _taskController.getTasks();
+            },
+            child: Container(
+              width: 100,
+              height: 50,
+              color: Colors.green,
+              margin: const EdgeInsets.only(bottom: 10),
+              child: Text(_taskController.taskList[index].title.toString()),
+            ),
+          );
+        }));
+      }),
     );
   }
 
@@ -96,8 +126,9 @@ class _HomePageState extends State<HomePage> {
                   Text('Today', style: headingStyle,)
                 ],
               ),
-              MyButton(label: "+Add Task", onTap: () {
-                Get.to(AddTaskPage());
+              MyButton(label: "+Add Task", onTap: () async{
+                await Get.to(AddTaskPage());
+                _taskController.getTasks();
               }),
             ],
           ),
