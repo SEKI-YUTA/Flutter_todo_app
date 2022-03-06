@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:todo_app/controllers/task_controller.dart';
+import 'package:todo_app/models/task.dart';
 import 'package:todo_app/services/notification_services.dart';
 import 'package:todo_app/services/theme_services.dart';
 import 'package:todo_app/ui/add_task_page.dart';
 import 'package:todo_app/ui/theme.dart';
 import 'package:todo_app/widgets/button.dart';
+import 'package:todo_app/widgets/task_tile.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({ Key? key }) : super(key: key);
@@ -53,21 +56,138 @@ class _HomePageState extends State<HomePage> {
           itemCount: _taskController.taskList.length,
           itemBuilder: ((context, index) {
             print(_taskController.taskList.length);
-          return GestureDetector(
-            onTap: () {
-              _taskController.delete(_taskController.taskList[index]);
-              _taskController.getTasks();
-            },
-            child: Container(
-              width: 100,
-              height: 50,
-              color: Colors.green,
-              margin: const EdgeInsets.only(bottom: 10),
-              child: Text(_taskController.taskList[index].title.toString()),
-            ),
-          );
+            Task task = _taskController.taskList[index];
+            // print(task.toJson());
+            if(task.repeat == "Daily") {
+              DateTime date = DateFormat.jm().parse(task.startTime.toString());
+              var myTime = DateFormat("HH:mm").format(date);
+              print(myTime);
+              notifyHelper.scheduledNotification(int.parse(myTime.split(":")[0]),int.parse(myTime.split(":")[1]),task);
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                child: SlideAnimation(
+                  child: FadeInAnimation(
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            _showBottomSheet(context, task);
+                          },
+                          child: TaskTile(task:task),
+                        )
+                      ],
+                    ),
+                  ),
+                )
+              );
+            }
+            if(task.date == DateFormat.yMd().format(_selectedDate)) {
+              return AnimationConfiguration.staggeredList(
+              position: index,
+              child: SlideAnimation(
+                child: FadeInAnimation(
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          _showBottomSheet(context, task);
+                        },
+                        child: TaskTile(task:task),
+                      )
+                    ],
+                  ),
+                ),
+              )
+            );
+            } else {
+              return Container();
+            }
+            // return AnimationConfiguration.staggeredList(
+            //   position: index,
+            //   child: SlideAnimation(
+            //     child: FadeInAnimation(
+            //       child: Row(
+            //         children: [
+            //           GestureDetector(
+            //             onTap: () {
+            //               _showBottomSheet(context, task);
+            //             },
+            //             child: TaskTile(task:task),
+            //           )
+            //         ],
+            //       ),
+            //     ),
+            //   )
+            // );
         }));
       }),
+    );
+  }
+
+  _showBottomSheet(BuildContext context, Task task) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.only(top: 4),
+        height: task.isCompleted == 1 ?
+        MediaQuery.of(context).size.height * 0.24:
+        MediaQuery.of(context).size.height * 0.32 ,
+        color: Get.isDarkMode ? darkGreyClr : Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 6,
+              width: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Get.isDarkMode ? Colors.grey[600]:Colors.grey[300]
+              ),
+            ),
+            Spacer(),
+            task.isCompleted == 1 ?
+            Container():
+            _bottomSheetButton(label: "Task Complete", onTap: () {
+              _taskController.markTaskCompleted(task.id!);
+              Get.back();
+            }, clr: primaryClr, context: context),
+            const SizedBox(height: 5,),
+            _bottomSheetButton(label: "Delete Task", onTap: () {
+              _taskController.delete(task);
+              Get.back();
+            }, clr: Colors.red[300]!, context: context),
+            SizedBox(height: 20,),
+            _bottomSheetButton(label: "Close", onTap: () {
+              Get.back();
+            }, isColose: true,clr: Colors.red[300]!, context: context),
+            SizedBox(height: 10,)
+          ],
+        ),
+      )
+    );
+  }
+
+  _bottomSheetButton({
+    required String label,
+    required Function()? onTap,
+    required Color clr,
+    bool isColose = false,
+    required BuildContext context
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        height: 55,
+        width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(
+          color: isColose?Colors.transparent:clr,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            width: 2,
+            color: isColose?Get.isDarkMode?Colors.grey[600]!:Colors.grey[300]!:clr
+          )
+        ),
+        child: Center(child: Text(label, style: isColose?titleStyle:titleStyle.copyWith(color: Colors.white),)),
+      ),
     );
   }
 
@@ -103,6 +223,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             onDateChange: (date) {
+              print(date);
               setState(() {
                 _selectedDate = date;
               });
@@ -145,8 +266,7 @@ class _HomePageState extends State<HomePage> {
           print('tapped');
           ThemeService().switchTheme();
           notifyHelper.displayNotification(title: "Theme Changed", body: Get.isDarkMode  ? "Activated light mode": "Activated dark mode");
-          // Get.isDarkModeはへこうする前の状態を返すので反対に書く必要がある
-          notifyHelper.scheduledNotification();
+          // この場合Get.isDarkModeは変更する前の状態を返すので反対に書く必要がある
         },
         child:  Icon(Get.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
         size: 20,
