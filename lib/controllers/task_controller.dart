@@ -18,7 +18,7 @@ class TaskController extends GetxController {
 
   void getTasks() async {
     List<Map<String, dynamic>> tasks = await DBHelper.query();
-    taskList.assignAll(tasks.map((data) => Task.frmomJson(data)).toList());
+    taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
   }
 
   void delete(Task task) {
@@ -28,7 +28,17 @@ class TaskController extends GetxController {
   }
 
   void markTaskCompleted(int id) async{
-    await DBHelper.update(id);
+    await DBHelper.updateCompleted(id);
+    getTasks(); 
+  }
+
+  Future editTask({required Task task}) async {
+    // print('edit task in task_controller');
+    await DBHelper.editTaskData(task);
     getTasks();
+  }
+
+  void printAllData() {
+    DBHelper.printAllData();
   }
 }

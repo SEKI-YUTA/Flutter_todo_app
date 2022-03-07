@@ -46,11 +46,25 @@ class DBHelper {
     return await _db?.delete(_tableName, where:  'id=?', whereArgs: [task.id]);
   }
 
-  static update(int id) async {
+  static updateCompleted(int id) async {
     return await _db?.rawUpdate("""
       UPDATE tasks
       set isCompleted = ?
       WHERE id = ?
     """,[1,id]);
+  }
+
+  static editTaskData(Task task) async {
+    print('edit task in db_helper');
+    await _db?.rawUpdate(
+      """
+        UPDATE tasks
+        set title = ?, note = ?, isCompleted = 0, date = ?, startTime = ?, endTime = ?, color = ?,remind = ?, repeat = ?
+        WHERE id = ?
+      """,[task.title,task.note, task.date, task.startTime, task.endTime, task.color, task.remind, task.repeat ,task.id]);
+  }
+
+  static void printAllData() {
+    print(_db?.query(_tableName));
   }
 }

@@ -26,7 +26,7 @@ class Task {
     this.repeat
   });
 
-  Task.frmomJson(Map<String, dynamic> json) {
+  Task.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     title = json["title"];
     note = json["note"];
@@ -35,7 +35,7 @@ class Task {
     startTime = json["startTime"];
     endTime = json["endTime"];
     color = json["color"];
-    remind = json["reming"];
+    remind = json["remind"];
     repeat = json["repeat"];
   }
 

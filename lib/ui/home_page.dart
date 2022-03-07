@@ -9,6 +9,7 @@ import 'package:todo_app/models/task.dart';
 import 'package:todo_app/services/notification_services.dart';
 import 'package:todo_app/services/theme_services.dart';
 import 'package:todo_app/ui/add_task_page.dart';
+import 'package:todo_app/ui/edit_task_page.dart';
 import 'package:todo_app/ui/theme.dart';
 import 'package:todo_app/widgets/button.dart';
 import 'package:todo_app/widgets/task_tile.dart';
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
           itemBuilder: ((context, index) {
             print(_taskController.taskList.length);
             Task task = _taskController.taskList[index];
-            // print(task.toJson());
+            print("from home:${task.toJson()}");
             if(task.repeat == "Daily") {
               DateTime date = DateFormat.jm().parse(task.startTime.toString());
               var myTime = DateFormat("HH:mm").format(date);
@@ -130,7 +131,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.only(top: 4),
         height: task.isCompleted == 1 ?
         MediaQuery.of(context).size.height * 0.24:
-        MediaQuery.of(context).size.height * 0.32 ,
+        MediaQuery.of(context).size.height * 0.40 ,
         color: Get.isDarkMode ? darkGreyClr : Colors.white,
         child: Column(
           children: [
@@ -149,6 +150,10 @@ class _HomePageState extends State<HomePage> {
               _taskController.markTaskCompleted(task.id!);
               Get.back();
             }, clr: primaryClr, context: context),
+            const SizedBox(height: 5,),
+            _bottomSheetButton(label: "Edit Task", onTap: () {
+              Get.to(EditTaskPage(task: task));
+            }, clr: Colors.green[300]!, context: context),
             const SizedBox(height: 5,),
             _bottomSheetButton(label: "Delete Task", onTap: () {
               _taskController.delete(task);

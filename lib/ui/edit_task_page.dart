@@ -8,21 +8,26 @@ import 'package:todo_app/ui/theme.dart';
 import 'package:todo_app/widgets/button.dart';
 import 'package:todo_app/widgets/input_field.dart';
 
-class AddTaskPage extends StatefulWidget {
-  const AddTaskPage({ Key? key }) : super(key: key);
+class EditTaskPage extends StatefulWidget {
+  EditTaskPage({
+    required this.task,
+    Key? key
+  }) : super(key: key);
+  Task task;
 
   @override
-  State<AddTaskPage> createState() => _AddTaskPageState();
+  State<EditTaskPage> createState() => _EditTaskPageState();
 }
 
-class _AddTaskPageState extends State<AddTaskPage> {
+class _EditTaskPageState extends State<EditTaskPage> {
+  late final Task? task;
   final TaskController _taskController = Get.put(TaskController());
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
-  String _endTime = '6:00 PM';
-  String _startTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
-  int _selectedRemind = 5;
+  late DateTime _selectedDate;
+  late String _endTime;
+  late String _startTime;
+  late int _selectedRemind;
   List<int> remindList = [
     5,10,15,20
   ];
@@ -30,9 +35,26 @@ class _AddTaskPageState extends State<AddTaskPage> {
   List<String> repeatList = [
     "None","Daily","Weekly","Monthly"
   ];
-  int _selectedColor = 0;
+  late int _selectedColor;
+  @override
+  void initState() {
+    task = widget.task;
+    setState(() {
+      _titleController.text = task!.title.toString();
+      _noteController.text = task!.note.toString();
+      _selectedDate = DateTime(int.parse(task!.date!.split('/')[2]),
+      int.parse(task!.date!.split('/')[0]),
+      int.parse(task!.date!.split('/')[1]));
+      _startTime = _convertStringToTime(task!.startTime.toString());
+      _endTime = _convertStringToTime(task!.endTime.toString());
+      _selectedRepeat = task!.repeat.toString();
+      _selectedRemind = int.parse(task!.remind.toString());
+      _selectedColor = int.parse(task!.color.toString());
+    });
+  }
   @override
   Widget build(BuildContext context) {
+    print(_selectedDate);
     return Scaffold(
       backgroundColor: context.theme.backgroundColor,
       appBar: _appBar(context),
@@ -42,7 +64,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Add Task', style: headingStyle,),
+              Text('Edit Task', style: headingStyle,),
               MyInputField(title: "Title", hint: "Enter your title", controller: _titleController,),
               MyInputField(title: "Note", hint: "Enter your note", controller: _noteController,),
               MyInputField(title: "Date",
@@ -71,7 +93,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   SizedBox(width: 12,),
                   Expanded(
                     child: MyInputField(title: "End Time",
-                    hint: _endTime  ,
+                    hint: _endTime,
                     widget: IconButton(
                       onPressed: () {
                         _getTimeFromUser(isStartTime: false);
@@ -132,7 +154,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _colorPallete(),
-                  MyButton(label: "Create Task", onTap: _validateData)
+                  MyButton(label: "Edit Task", onTap: () {
+                    _validateData();
+                  })
                 ],
               )
             ],
@@ -145,7 +169,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   _validateData() {
     if(_titleController.text.isNotEmpty&&_noteController.text.isNotEmpty) {
       // add to database
-      _addTaskToDB();
+      _editTaskOfDB();
       Get.back();
     } else if(_titleController.text.isEmpty || _noteController.text.isEmpty){
       Get.snackbar("Required", 'All field are required!',
@@ -157,9 +181,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
   }
 
-  _addTaskToDB() async {
-    int result = await _taskController.addTask(
+  _editTaskOfDB() async {
+    print("editTaskOfDB");
+    print(_titleController.text);
+    print(_noteController.text);
+    await _taskController.editTask(
         task:Task(
+          id: task!.id,
         title: _titleController.text,
         note: _noteController.text,
         date: DateFormat.yMd().format(_selectedDate),
@@ -171,8 +199,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         isCompleted: 0
       )
     );
-    _taskController.getTasks();
-    print("My id is ${result}");
+
   }
 
   Column _colorPallete() {
@@ -230,6 +257,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       firstDate: DateTime(2015),
       lastDate: DateTime(2100));
       if(_pickedDate != null) {
+        print('pickedDate$_pickedDate');
         setState(() {
           _selectedDate = _pickedDate;
         });
@@ -263,5 +291,14 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
+  _convertStringToDate() {
+
+  }
+
+  _convertStringToTime(String startTime) {
+    DateTime date = DateFormat.jm().parse(startTime);
+    var myTime = DateFormat("HH:mm a").format(date);
+    return myTime;
+  }
   
 }
